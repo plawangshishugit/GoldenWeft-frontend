@@ -1,0 +1,96 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PAID
+  SHIPPED
+  COMPLETED
+  CANCELLED
+}
+
+
+model Product {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  slug        String   @unique
+  name        String
+  description String?
+  fabric      String
+  weight      String
+  style       String
+  tier        String
+  tones       String[]
+  occasions   String[]
+  isNew       Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AdvisorSession {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  answers         Json
+  answersHash     String
+  recommendations Json
+  createdAt       DateTime @default(now())
+
+  @@index([answersHash])
+}
+
+model ConversionEvent {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  type            String   // "wishlist" | "inquiry"
+  productId       String?
+  advisorSessionId String?
+  createdAt       DateTime @default(now())
+}
+
+model BusinessInquiry {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  company   String?
+  email     String
+  message   String
+  ip        String?
+  resolved  Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Order {
+  id        String      @id @default(auto()) @map("_id") @db.ObjectId
+  reference String      @unique
+  name      String
+  contact   String
+  notes     String?
+  total     Int
+
+  status    OrderStatus @default(PENDING) // ✅ NEW
+
+  items     OrderItem[]
+
+  createdAt DateTime    @default(now())
+
+  @@index([createdAt])
+  @@index([contact])
+  @@index([status])
+}
+
+
+model OrderItem {
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  productId String
+  name      String
+  price     Int
+  quantity  Int
+
+  orderId   String? @db.ObjectId
+  order     Order?  @relation(fields: [orderId], references: [id])
+
+  @@index([productId])
+}

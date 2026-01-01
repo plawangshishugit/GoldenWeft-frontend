@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+/* ===============================
+   DESIGN TOKENS (GoldenWeft)
+   =============================== */
+:root {
+  --color-ivory: #F6F3EE;
+    --color-charcoal: #1F1F1F;
+    --color-gold: #C6A15B;
+  
+    --color-maroon: #5B1E1E;
+    --color-indigo: #2E3A59;
+    --color-sage: #9BAF9B;
+    --color-taupe: #8B7E74;
+}
+
+/* Tailwind v4 theme mapping */
+@theme inline {
+  --color-background: var(--color-ivory);
+    --color-foreground: var(--color-charcoal);
+}
+
+/* Dark mode (optional, safe) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background: #0a0a0a;
+      --color-foreground: #ededed;
+  }
+}
+
+/* Base body style */
+body {
+  background: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans, Arial, Helvetica, sans-serif);
+}
