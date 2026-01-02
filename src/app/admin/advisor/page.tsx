@@ -10,7 +10,8 @@ export default async function AdminAdvisorAnalytics() {
   const countBy = (key: string) => {
     const map: Record<string, number> = {};
     sessions.forEach((s) => {
-      const value = s.answers?.[key];
+      const answers = s.answers as Record<string, string> | null;
+      const value = (answers as Record<string, string> | null)?.[key];
       if (!value) return;
       map[value] = (map[value] || 0) + 1;
     });
