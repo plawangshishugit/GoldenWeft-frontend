@@ -25,12 +25,12 @@ export default async function CollectionsPage() {
             product={{
               id: product.slug,          // keep ProductCard compatible
               name: product.name,
-              fabric: product.fabric,
-              weight: product.weight,
-              style: product.style,
-              tier: product.tier,
-              tones: product.tones,
-              occasion: product.occasions,
+              fabric: product.fabric as "Tussar" | "Ghicha" | "Mulberry",
+              weight: product.weight as "Light" | "Medium" | "Heavy",
+              style: product.style as "Traditional" | "Contemporary" | "Elegant",
+              tier: product.tier as "Everyday" | "Occasion" | "Heirloom",
+              tones: product.tones ?? [],
+              occasions: product.occasions ?? [],
               isNew: product.isNew,
             }}
           />

@@ -5,7 +5,6 @@ import nodemailer from "nodemailer";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-
     const { reference, name, contact, notes, cart } = body;
 
     if (!reference || !name || !contact || !cart?.length) {
@@ -15,14 +14,50 @@ export async function POST(req: Request) {
       );
     }
 
-    /* ---------- Calculate total (SERVER-SIDE) ---------- */
-    const total = cart.reduce(
-      (sum: number, item: any) =>
-        sum + item.price * item.quantity,
-      0
-    );
+    /* ===============================
+       1️⃣ Fetch products from DB
+    =============================== */
+    const products = await prisma.product.findMany({
+      where: {
+        slug: { in: cart.map((i: any) => i.productId) },
+        isActive: true,
+      },
+    });
 
-    /* ---------- Store Order (CORRECT PRISMA WAY) ---------- */
+    if (products.length !== cart.length) {
+      return NextResponse.json(
+        { error: "Some products are invalid" },
+        { status: 400 }
+      );
+    }
+
+    /* ===============================
+       2️⃣ Calculate total SAFELY
+    =============================== */
+    let total = 0;
+
+    const orderItems = cart.map((item: any) => {
+      const product = products.find(
+        (p) => p.slug === item.productId
+      );
+
+      if (!product || product.price == null) {
+        throw new Error(`Invalid price for ${item.productId}`);
+      }
+
+      total += product.price * item.quantity;
+
+      return {
+        productId: product.slug,
+        name: product.name,
+        price: product.price, // ✅ DB price
+        quantity: item.quantity,
+      };
+    });
+
+    /* ===============================
+       3️⃣ Store Order
+    =============================== */
     const order = await prisma.order.create({
       data: {
         reference,
@@ -31,17 +66,14 @@ export async function POST(req: Request) {
         notes: notes || "",
         total,
         items: {
-          create: cart.map((item: any) => ({
-            productId: item.productId,
-            name: item.name,
-            price: item.price,
-            quantity: item.quantity,
-          })),
+          create: orderItems,
         },
       },
     });
 
-    /* ---------- Email Admin ---------- */
+    /* ===============================
+       4️⃣ Email Admin
+    =============================== */
     const transporter = nodemailer.createTransport({
       host: process.env.EMAIL_HOST,
       port: Number(process.env.EMAIL_PORT),
@@ -52,9 +84,9 @@ export async function POST(req: Request) {
       },
     });
 
-    const itemsList = cart
+    const itemsList = orderItems
       .map(
-        (item: any) =>
+        (item) =>
           `• ${item.name} × ${item.quantity}`
       )
       .join("\n");
@@ -90,6 +122,7 @@ Login to admin dashboard to take action.
       ok: true,
       orderId: order.id,
       reference,
+      total,
     });
 
   } catch (err) {

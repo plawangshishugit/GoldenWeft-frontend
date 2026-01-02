@@ -6,8 +6,22 @@ async function main() {
 
   for (const product of PRODUCTS) {
     await prisma.product.upsert({
-      where: { slug: product.id }, // using id as slug
-      update: {},
+      where: { slug: product.id },
+
+      update: {
+        // 🔥 IMPORTANT: update existing rows
+        price: product.price ?? 0,
+        name: product.name,
+        fabric: product.fabric,
+        weight: product.weight,
+        style: product.style,
+        tier: product.tier,
+        tones: product.tones,
+        occasions: product.occasions,
+        isNew: product.isNew ?? false,
+        isActive: true,
+      },
+
       create: {
         slug: product.id,
         name: product.name,
@@ -17,7 +31,8 @@ async function main() {
         style: product.style,
         tier: product.tier,
         tones: product.tones,
-        occasions: product.occasion,
+        occasions: product.occasions,
+        price: product.price ?? 0,
         isNew: product.isNew ?? false,
         isActive: true,
       },

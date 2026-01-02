@@ -27,6 +27,7 @@ model Product {
   tier        String
   tones       String[]
   occasions   String[]
+  price       Int
   isNew       Boolean  @default(false)
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())

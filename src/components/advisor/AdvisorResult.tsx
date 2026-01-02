@@ -5,58 +5,78 @@ import { Section } from "@/components/ui/Section";
 import { Text } from "@/components/ui/Text";
 import AdvisorProductCard from "./AdvisorProductCard";
 
+const CACHE_KEY = "gw_advisor_results_v1";
+
 export default function AdvisorResult({
   answers,
-  onEdit,
+  lastEdited,
+  onRestart,
 }: {
   answers: Record<string, string>;
-  onEdit: (step: "occasion" | "drape" | "style" | "tone" | "investment") => void;
+  lastEdited: string | null;
+  onRestart: () => void;
 }) {
-  const [loading, setLoading] = useState(true);
   const [results, setResults] = useState<any[]>([]);
-  const advisorSessionId =
-    localStorage.getItem("advisorSessionId");
-
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchRecommendations() {
-      try {
-        const res = await fetch("/api/advisor", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            answers,
-            advisorSessionId, // ✅ THIS IS THE KEY FIX
-          }),
+    async function load() {
+      setLoading(true);
 
-        });
+      const cachedRaw = localStorage.getItem(CACHE_KEY);
+      const cached = cachedRaw ? JSON.parse(cachedRaw) : null;
 
-        const data = await res.json();
+      if (cached && lastEdited) {
+        // 🔁 PARTIAL RE-RANK using product metadata
+        const reranked = cached
+          .map((r: any) => {
+            let boost = 0;
 
-        const safeResults = Array.isArray(data.recommendations)
-          ? data.recommendations
-          : Array.isArray(data.recommendations?.items)
-          ? data.recommendations.items
-          : [];
+            const value = answers[lastEdited];
 
-        setResults(safeResults);
+            if (!value) return r;
 
-        if (data.advisorSessionId) {
-          localStorage.setItem(
-            "advisorSessionId",
-            data.advisorSessionId
-          );
-        }
-      } catch (err) {
-        console.error("Advisor fetch failed:", err);
-        setResults([]);
-      } finally {
+            if (
+              r.product?.tones?.includes(value) ||
+              r.product?.occasions?.includes(value) ||
+              r.product?.style === value ||
+              r.product?.tier === value
+            ) {
+              boost = 5;
+            }
+
+            return {
+              ...r,
+              confidence: Math.min(
+                100,
+                Math.max(0, r.confidence + boost)
+              ),
+            };
+          })
+          .sort((a: any, b: any) => b.confidence - a.confidence);
+
+        setResults(reranked);
         setLoading(false);
+        return;
       }
+
+      // 🔁 Full recompute (first time or after reset)
+      const res = await fetch("/api/advisor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ answers }),
+      });
+
+      const data = await res.json();
+      const recs = data.recommendations ?? [];
+
+      setResults(recs);
+      localStorage.setItem(CACHE_KEY, JSON.stringify(recs));
+      setLoading(false);
     }
 
-    fetchRecommendations();
-  }, [answers]);
+    load();
+  }, [answers, lastEdited]);
 
   if (loading) {
     return (
@@ -68,65 +88,43 @@ export default function AdvisorResult({
 
   return (
     <Section>
-      <div className="max-w-4xl items-center mx-auto">
-        <div className="flex items-start justify-between items-center">
-          <Text as="h1">Your GoldenWeft Edit</Text>
-        </div>
+      <div className="max-w-4xl space-y-8">
+        <Text as="h1">Your GoldenWeft Edit</Text>
 
+        {/* 🔔 Change badge */}
+        {lastEdited && (
+          <div className="inline-block text-xs px-3 py-1 border rounded-full">
+            Updated {lastEdited}
+          </div>
+        )}
+
+        {/* Results */}
         {results.length === 0 ? (
-          <Text className="mt-6">
-            No close matches found. Try adjusting preferences.
-          </Text>
+          <Text>No close matches found.</Text>
         ) : (
-          <div className="mt-10 space-y-8">
-            {results.map((item, index) => (
+          <div className="space-y-8">
+            {results.map((item: any, i: number) => (
               <AdvisorProductCard
                 key={item.product.id}
                 product={item.product}
                 reasons={item.reasons}
                 confidence={item.confidence}
-                highlight={index === 0}
+                highlight={i === 0}
               />
             ))}
           </div>
         )}
+
+        {/* 🔽 Bottom control (simple & clean) */}
+        <div className="pt-10 border-t text-center">
+          <button
+            onClick={onRestart}
+            className="underline opacity-70 hover:opacity-100"
+          >
+            Restart Find Your Silk
+          </button>
+        </div>
       </div>
-{/* ---------- Refine Preferences ---------- */}
-<div className="mt-20 pt-10 border-t border-black/10">
-  <div className="flex flex-col items-center gap-4 text-center">
-    <Text className="text-sm uppercase tracking-wider opacity-60">
-      Refine your edit
-    </Text>
-
-    <div className="flex flex-wrap justify-center gap-3">
-      {[
-        { key: "occasion", label: "Occasion" },
-        { key: "style", label: "Style" },
-        { key: "tone", label: "Tone" },
-        { key: "investment", label: "Investment" },
-      ].map((item) => (
-        <button
-          key={item.key}
-          onClick={() => onEdit(item.key as any)}
-          className="
-            px-5 py-2
-            text-sm
-            rounded-full
-            border border-black/20
-            hover:border-black
-            hover:bg-black
-            hover:text-white
-            transition
-          "
-        >
-          Edit {item.label}
-        </button>
-      ))}
-    </div>
-  </div>
-</div>
-
-
     </Section>
   );
 }

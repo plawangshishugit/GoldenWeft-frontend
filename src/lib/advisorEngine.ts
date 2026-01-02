@@ -1,47 +1,40 @@
-import { Product } from "./products";
-
-export function scoreProduct(
-  product: Product,
+export function rankProducts(
+  products: any[],
   answers: Record<string, string>
 ) {
-  let score = 0;
-  const reasons: string[] = [];
+  return products
+    .map(product => {
+      let score = 0;
+      let reasons: string[] = [];
 
-  const occasions = product.occasion ?? []; // ✅ normalize
-  const tones = product.tones ?? [];
+      if (product.occasions.includes(answers.occasion)) {
+        score += 30;
+        reasons.push("Matches occasion");
+      }
 
-  // Occasion
-  if (occasions.includes(answers.occasion)) {
-    score += 3;
-    reasons.push("Suitable for your occasion");
-  }
+      if (product.weight === answers.drape) {
+        score += 20;
+        reasons.push("Preferred drape");
+      }
 
-  // Drape
-  if (
-    (answers.drape === "Light & breathable" && product.weight === "Light") ||
-    (answers.drape === "Rich & heavy" && product.weight === "Heavy")
-  ) {
-    score += 2;
-    reasons.push("Matches your drape preference");
-  }
+      if (product.style === answers.style) {
+        score += 20;
+        reasons.push("Style match");
+      }
 
-  // Style
-  if (product.style === answers.style) {
-    score += 2;
-    reasons.push("Aligns with your style");
-  }
+      if (product.tones.includes(answers.tone)) {
+        score += 15;
+        reasons.push("Tone match");
+      }
 
-  // Tone
-  if (tones.includes(answers.tone)) {
-    score += 2;
-    reasons.push("Complements your undertone");
-  }
+      if (product.tier === answers.investment) {
+        score += 15;
+        reasons.push("Budget match");
+      }
 
-  // Investment
-  if (product.tier === answers.investment) {
-    score += 1;
-    reasons.push("Fits your investment preference");
-  }
-
-  return { score, reasons };
+      return { product, score, reasons };
+    })
+    .filter(p => p.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 12); // always show enough
 }

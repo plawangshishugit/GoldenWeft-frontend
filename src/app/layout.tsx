@@ -3,6 +3,7 @@ import { Playfair_Display, Inter } from "next/font/google";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import FloatingWhatsAppCTA from "@/components/whatsapp/FloatingWhatsAppCTA";
+import BootstrapProducts from "@/components/bootstrap/BootstrapProducts";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -22,6 +23,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${playfair.variable} ${inter.variable}`}>
       <body>
+        {/* 🔥 Load product metadata once */}
+        <BootstrapProducts />
+
         <Header />
         {children}
         <Footer />

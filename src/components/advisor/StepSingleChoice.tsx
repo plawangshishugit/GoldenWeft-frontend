@@ -1,26 +1,50 @@
+"use client";
+
 import { Section } from "@/components/ui/Section";
 import { Text } from "@/components/ui/Text";
 
-const CONFIG: Record<string, { question: string; options: string[] }> = {
+const CONFIG: Record<
+  string,
+  { question: string; options: string[] }
+> = {
   occasion: {
     question: "What is this silk for?",
-    options: ["Wedding", "Festival / Puja", "Everyday Elegance", "Gifting", "Special Event"],
+    options: [
+      "Wedding",
+      "Festival",
+      "Everyday",
+      "Gifting",
+      "Special Event",
+    ],
   },
   drape: {
-    question: "How would you like the silk to feel when worn?",
-    options: ["Light & breathable", "Rich & structured", "Balanced & versatile"],
+    question: "How would you like the silk to feel?",
+    options: [
+      "Light & breathable",
+      "Balanced & versatile",
+      "Rich & structured",
+    ],
   },
   style: {
     question: "Which style feels most like you?",
-    options: ["Traditional", "Elegant & minimal", "Contemporary", "Bold & expressive"],
+    options: [
+      "Traditional",
+      "Elegant",
+      "Contemporary",
+      "Bold",
+    ],
   },
   tone: {
-    question: "Which tones usually suit you best?",
-    options: ["Warm", "Cool", "Neutral", "Not sure"],
+    question: "Which tones suit you best?",
+    options: ["Warm", "Cool", "Neutral"],
   },
   investment: {
-    question: "How would you like to invest in this piece?",
-    options: ["Everyday luxury", "Occasion special", "Heirloom piece"],
+    question: "How would you like to invest?",
+    options: [
+      "Everyday luxury",
+      "Occasion special",
+      "Heirloom piece",
+    ],
   },
 };
 
@@ -29,11 +53,13 @@ export default function StepSingleChoice({
   onSelect,
   onBack,
 }: {
-  step: string;
-  onSelect: (k: string, v: string) => void;
+  step: keyof typeof CONFIG;
+  onSelect: (key: string, value: string) => void;
   onBack: () => void;
 }) {
   const data = CONFIG[step];
+
+  if (!data) return null;
 
   return (
     <Section>

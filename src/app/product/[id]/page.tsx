@@ -39,7 +39,7 @@ export default async function ProductDetailPage({
         <div className="mt-8 border border-black/10 rounded-soft p-6">
           <Text as="h3">Why this silk works</Text>
           <ul className="mt-3 list-disc list-inside text-sm opacity-80">
-            <li>Suitable for {product.occasion.join(", ")}</li>
+            <li>Suitable for {product.occasions.join(", ")}</li>
             <li>Style: {product.style}</li>
             <li>Complements {product.tones.join(" & ")} undertones</li>
             <li>Investment level: {product.tier}</li>

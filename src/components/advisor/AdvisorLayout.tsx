@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import AdvisorProgress from "./AdvisorProgress";
 import StepIntro from "./StepIntro";
 import StepSingleChoice from "./StepSingleChoice";
 import AdvisorResult from "./AdvisorResult";
 import { AnimatePresence, motion } from "framer-motion";
 
-/* ---------- Steps ---------- */
-const steps = [
+/* ---------- STEPS ---------- */
+export const steps = [
   "intro",
   "occasion",
   "drape",
@@ -18,50 +18,49 @@ const steps = [
   "result",
 ] as const;
 
-type StepKey = (typeof steps)[number];
+export type StepKey = (typeof steps)[number];
 
-/* ---------- Storage ---------- */
 const STORAGE_KEY = "gw_advisor_state";
 
-type StoredState = {
-  step: number;
-  answers: Record<string, string>;
-};
-
 export default function AdvisorLayout() {
-  const [step, setStep] = useState<number | null>(null);
+  const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [editTarget, setEditTarget] = useState<StepKey | null>(null);
-  const [direction, setDirection] = useState(1); // ➡️ animation direction
+  const [direction, setDirection] = useState<1 | -1>(1);
 
-  /* ---------- Restore ---------- */
+  /** 🔒 hydration guard (THE FIX) */
+  const hydrated = useRef(false);
+
+  /* ---------- RESTORE (RUNS ONCE ONLY) ---------- */
   useEffect(() => {
+    if (hydrated.current) return;
+
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       try {
-        const parsed: StoredState = JSON.parse(raw);
-        setStep(parsed.step ?? 0);
-        setAnswers(parsed.answers ?? {});
-        return;
+        const parsed = JSON.parse(raw);
+        if (typeof parsed.step === "number") {
+          setStep(parsed.step);
+          setAnswers(parsed.answers ?? {});
+        }
       } catch {}
     }
-    setStep(0);
+
+    hydrated.current = true;
   }, []);
 
-  /* ---------- Persist ---------- */
+  /* ---------- PERSIST (AFTER HYDRATION ONLY) ---------- */
   useEffect(() => {
-    if (step === null) return;
+    if (!hydrated.current) return;
+
     localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({ step, answers })
     );
   }, [step, answers]);
 
-  if (step === null) return null;
-
   const currentStep = steps[step];
 
-  /* ---------- Navigation ---------- */
+  /* ---------- NAV ---------- */
   const next = () => {
     setDirection(1);
     setStep((s) => Math.min(s + 1, steps.length - 1));
@@ -72,32 +71,49 @@ export default function AdvisorLayout() {
     setStep((s) => Math.max(s - 1, 0));
   };
 
-  const save = (key: string, value: string) => {
-    setAnswers((prev) => {
-      const updated = { ...prev, [key]: value };
-
-      if (editTarget) {
-        setDirection(1);
-        setStep(steps.indexOf("result"));
-        setEditTarget(null);
-      } else {
-        next();
-      }
-
-      return updated;
-    });
+  const select = (key: StepKey, value: string) => {
+    setAnswers((prev) => ({ ...prev, [key]: value }));
+    next();
   };
 
-  /* ---------- Render ---------- */
+  const restart = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    setAnswers({});
+    setStep(0);
+    setDirection(1);
+  };
+
+  /* ---------- INTRO ---------- */
+  if (currentStep === "intro") {
+    return (
+      <AnimatePresence mode="wait">
+        <motion.div
+          key="intro"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -30 }}
+          transition={{ duration: 0.3 }}
+        >
+          <StepIntro onNext={() => setStep(1)} />
+        </motion.div>
+      </AnimatePresence>
+    );
+  }
+
+  /* ---------- RESULT ---------- */
+  if (currentStep === "result") {
+    return (
+      <AdvisorResult
+        answers={answers}
+        onRestart={restart}
+      />
+    );
+  }
+
+  /* ---------- QUESTIONS ---------- */
   return (
     <div className="min-h-screen flex flex-col justify-center">
-      {/* Progress shown only for question steps */}
-      {currentStep !== "intro" && currentStep !== "result" && (
-        <AdvisorProgress
-          current={step}
-          total={steps.length - 2}
-        />
-      )}
+      <AdvisorProgress current={step} total={steps.length - 2} />
 
       <AnimatePresence mode="wait" custom={direction}>
         <motion.div
@@ -106,43 +122,13 @@ export default function AdvisorLayout() {
           initial={{ opacity: 0, x: direction > 0 ? 40 : -40 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: direction > 0 ? -40 : 40 }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: 0.25 }}
         >
-          {/* Intro */}
-          {currentStep === "intro" && (
-            <StepIntro
-              onNext={() => {
-                localStorage.removeItem(STORAGE_KEY);
-                setAnswers({});
-                setEditTarget(null);
-                setDirection(1);
-                setStep(1);
-              }}
-            />
-          )}
-
-          {/* Result */}
-          {currentStep === "result" && (
-            <AdvisorResult
-              answers={answers}
-              onEdit={(stepKey) => {
-                setEditTarget(stepKey);
-                setDirection(-1);
-                setStep(steps.indexOf(stepKey));
-              }}
-            />
-          )}
-
-          {/* Questions */}
-          {currentStep !== "intro" &&
-            currentStep !== "result" && (
-              <StepSingleChoice
-                step={currentStep}
-                onSelect={save}
-                onBack={back}
-                defaultValue={answers[currentStep]}
-              />
-            )}
+          <StepSingleChoice
+            step={currentStep}
+            onSelect={select}
+            onBack={back}
+          />
         </motion.div>
       </AnimatePresence>
     </div>

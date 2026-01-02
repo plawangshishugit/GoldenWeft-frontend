@@ -100,6 +100,10 @@ export async function POST(req: Request) {
           (p) => p.slug === r.productId
         );
         if (!product) return null;
+        if (typeof product.price !== "number") {
+      console.error("❌ Product missing price:", product.slug);
+      return null;
+    }
 
         return {
           product: {
@@ -112,6 +116,7 @@ export async function POST(req: Request) {
             tones: product.tones,
             occasion: product.occasions,
             isNew: product.isNew,
+            price: product.price,
           },
           confidence: Math.round(r.confidence ?? 0),
           reasons: r.reasons ?? [],
