@@ -8,6 +8,14 @@ import { PreferencesTable } from "./_components/PreferencesTable";
 import { TopWishlisted } from "./_components/TopWishlisted";
 import { ExportLinks } from "./_components/ExportLinks";
 
+/* ---------- Types ---------- */
+type PreferenceStats = Record<string, Record<string, number>>;
+
+type TopWishlistedItem = {
+  productId: string;
+  _count: { productId: number };
+};
+
 export default async function AdminDashboard({
   searchParams,
 }: {
@@ -16,6 +24,7 @@ export default async function AdminDashboard({
   await requireAdminAuth();
 
   const { range = "7" } = await searchParams;
+
   const fromDate = new Date(
     range === "all"
       ? 0
@@ -28,13 +37,28 @@ export default async function AdminDashboard({
     inquiries,
     clicks,
     recentSessions,
-    topWishlisted,
+    rawTopWishlisted,
   ] = await Promise.all([
-    prisma.advisorSession.count({ where: { createdAt: { gte: fromDate } } }),
-    prisma.conversionEvent.count({ where: { type: "wishlist", createdAt: { gte: fromDate } } }),
-    prisma.conversionEvent.count({ where: { type: "inquiry", createdAt: { gte: fromDate } } }),
-    prisma.conversionEvent.count({ where: { type: "advisor_click", createdAt: { gte: fromDate } } }),
-    prisma.advisorSession.findMany({ where: { createdAt: { gte: fromDate } } }),
+    prisma.advisorSession.count({
+      where: { createdAt: { gte: fromDate } },
+    }),
+
+    prisma.conversionEvent.count({
+      where: { type: "wishlist", createdAt: { gte: fromDate } },
+    }),
+
+    prisma.conversionEvent.count({
+      where: { type: "inquiry", createdAt: { gte: fromDate } },
+    }),
+
+    prisma.conversionEvent.count({
+      where: { type: "advisor_click", createdAt: { gte: fromDate } },
+    }),
+
+    prisma.advisorSession.findMany({
+      where: { createdAt: { gte: fromDate } },
+    }),
+
     prisma.conversionEvent.groupBy({
       by: ["productId"],
       where: { type: "wishlist", createdAt: { gte: fromDate } },
@@ -42,36 +66,51 @@ export default async function AdminDashboard({
     }),
   ]);
 
+  /* ---------- FIX #1: Filter null productIds ---------- */
+  const topWishlisted: TopWishlistedItem[] = rawTopWishlisted.filter(
+    (item): item is TopWishlistedItem => item.productId !== null
+  );
+
+  /* ---------- FIX #2: Typed preferences aggregation ---------- */
+  const preferenceStats: PreferenceStats = recentSessions.reduce(
+    (acc, session) => {
+      const answers = session.answers as Record<string, string> | null;
+      if (!answers) return acc;
+
+      for (const key of Object.keys(answers)) {
+        acc[key] ??= {};
+        acc[key][answers[key]] = (acc[key][answers[key]] || 0) + 1;
+      }
+      return acc;
+    },
+    {} as PreferenceStats
+  );
+
   return (
     <Section>
       {/* Header */}
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-6">
+          <Text as="h1">GoldenWeft Admin Dashboard</Text>
+        </div>
 
-    <div className="flex justify-between items-center">
-      <div className="flex items-center gap-6">
-        <Text as="h1">GoldenWeft Admin Dashboard</Text>
-      </div>
-    <div>
-      {/* ✅ Admin navigation */}
-      <nav className="flex gap-4 text-sm">
-        <button>
-            <a
-              href="/admin/orders"
-              className="underline opacity-70 hover:opacity-100"
-            >
-              Orders
-            </a>
-        </button>
-        <button>
+        <nav className="flex gap-4 text-sm">
+          <a
+            href="/admin/orders"
+            className="underline opacity-70 hover:opacity-100"
+          >
+            Orders
+          </a>
+
           <a
             href="/api/admin/logout"
-            className="text-sm underline opacity-70 hover:opacity-100"
-            >
+            className="underline opacity-70 hover:opacity-100"
+          >
             Logout
-            </a>
-        </button>
-      </nav>
-    </div>
-  </div>
+          </a>
+        </nav>
+      </div>
+
       <DateRangeSelector current={range} />
 
       <MetricsGrid
@@ -81,15 +120,7 @@ export default async function AdminDashboard({
         inquiries={inquiries}
       />
 
-      <PreferencesTable
-        stats={recentSessions.reduce((acc: any, s: any) => {
-          for (const k in s.answers) {
-            acc[k] ??= {};
-            acc[k][s.answers[k]] = (acc[k][s.answers[k]] || 0) + 1;
-          }
-          return acc;
-        }, {})}
-      />
+      <PreferencesTable stats={preferenceStats} />
 
       <TopWishlisted items={topWishlisted} />
 
