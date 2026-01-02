@@ -25,8 +25,8 @@ export function verifyAdminToken(token: string): AdminSession | null {
 /**
  * Read admin session from HTTP-only cookie
  */
-export function getAdminSession(): AdminSession | null {
-  const cookieStore = cookies();
+export async function getAdminSession(): Promise<AdminSession | null> {
+  const cookieStore = await cookies();
   const token =
     cookieStore.get("admin_session")?.value ||
     cookieStore.get("admin_token")?.value; // backward compatibility

@@ -24,14 +24,14 @@ export default async function FeaturedSilks() {
             <ProductCard
               key={product.slug}
               product={{
-                id: product.slug,
+              id: product.slug,
                 name: product.name,
-                fabric: product.fabric,
-                weight: product.weight,
-                style: product.style,
-                tier: product.tier,
+                fabric: product.fabric as "Tussar" | "Ghicha" | "Mulberry",
+                weight: product.weight as "Light" | "Medium" | "Heavy",
+                style: product.style as "Traditional" | "Contemporary" | "Elegant",
+                tier: product.tier as "Everyday" | "Occasion" | "Heirloom",
                 tones: product.tones,
-                occasion: product.occasions,
+                occasions: product.occasions,
                 isNew: product.isNew,
               }}
             />

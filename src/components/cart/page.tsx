@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { addToCart } from "@/lib/cart";
 import { Text } from "@/components/ui/Text";
 import { Product } from "@/lib/products";
-import { updateQuantity } from "@/lib/cart";
 
 
 export default function AddToCartActions({

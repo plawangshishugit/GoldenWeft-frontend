@@ -2,10 +2,38 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import nodemailer from "nodemailer";
 
+/* ===============================
+   Types
+=============================== */
+type CartItem = {
+  productId: string;
+  quantity: number;
+};
+
+type OrderItem = {
+  productId: string;
+  name: string;
+  price: number;
+  quantity: number;
+};
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { reference, name, contact, notes, cart } = body;
+
+    const {
+      reference,
+      name,
+      contact,
+      notes,
+      cart,
+    }: {
+      reference: string;
+      name: string;
+      contact: string;
+      notes?: string;
+      cart: CartItem[];
+    } = body;
 
     if (!reference || !name || !contact || !cart?.length) {
       return NextResponse.json(
@@ -19,7 +47,7 @@ export async function POST(req: Request) {
     =============================== */
     const products = await prisma.product.findMany({
       where: {
-        slug: { in: cart.map((i: any) => i.productId) },
+        slug: { in: cart.map((i) => i.productId) },
         isActive: true,
       },
     });
@@ -36,7 +64,7 @@ export async function POST(req: Request) {
     =============================== */
     let total = 0;
 
-    const orderItems = cart.map((item: any) => {
+    const orderItems: OrderItem[] = cart.map((item) => {
       const product = products.find(
         (p) => p.slug === item.productId
       );
@@ -50,7 +78,7 @@ export async function POST(req: Request) {
       return {
         productId: product.slug,
         name: product.name,
-        price: product.price, // ✅ DB price
+        price: product.price,
         quantity: item.quantity,
       };
     });
@@ -86,7 +114,7 @@ export async function POST(req: Request) {
 
     const itemsList = orderItems
       .map(
-        (item) =>
+        (item: OrderItem) =>
           `• ${item.name} × ${item.quantity}`
       )
       .join("\n");

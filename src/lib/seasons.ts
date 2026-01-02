@@ -15,3 +15,4 @@ export const SEASONS = {
     match: ["Festival"],
   },
 } as const;
+export type Season = keyof typeof SEASONS;

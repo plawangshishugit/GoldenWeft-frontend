@@ -10,7 +10,7 @@ export function scoreProduct(
   const reasons: string[] = [];
 
   // Occasion
-  if (answers.occasion && product.occasion.includes(mapOccasion(answers.occasion))) {
+  if (answers.occasion && product.occasions.includes(mapOccasion(answers.occasion))) {
     score += 3;
     reasons.push("Suitable for your occasion");
   }
@@ -56,7 +56,7 @@ export function scoreProduct(
   return { score, reasons };
 }
 
-function mapOccasion(value: string): Product["occasion"][number] {
+function mapOccasion(value: string): Product["occasions"][number] {
   if (value.includes("Wedding")) return "Wedding";
   if (value.includes("Festival")) return "Festival";
   if (value.includes("Everyday")) return "Everyday";
@@ -66,6 +66,6 @@ function mapOccasion(value: string): Product["occasion"][number] {
 function mapStyle(value: string): Product["style"] {
   if (value.includes("Traditional")) return "Traditional";
   if (value.includes("Elegant")) return "Elegant";
-  if (value.includes("Contemporary")) return "Contemporary";
-  return "Bold";
+ 
+  return "Contemporary";
 }

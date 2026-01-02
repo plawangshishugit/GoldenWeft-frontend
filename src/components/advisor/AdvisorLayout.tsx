@@ -71,7 +71,7 @@ export default function AdvisorLayout() {
     setStep((s) => Math.max(s - 1, 0));
   };
 
-  const select = (key: StepKey, value: string) => {
+  const select = (key: string, value: string) => {
     setAnswers((prev) => ({ ...prev, [key]: value }));
     next();
   };
@@ -105,8 +105,7 @@ export default function AdvisorLayout() {
     return (
       <AdvisorResult
         answers={answers}
-        onRestart={restart}
-      />
+        onRestart={restart} lastEdited={null}      />
     );
   }
 

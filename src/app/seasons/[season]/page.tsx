@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { SEASONS, SeasonKey } from "@/lib/seasons";
+import { SEASONS, Season } from "@/lib/seasons";
 import { Section } from "@/components/ui/Section";
 import { Text } from "@/components/ui/Text";
 import ProductCard from "@/components/product/ProductCard";
@@ -8,10 +8,10 @@ import ProductCard from "@/components/product/ProductCard";
 export default async function SeasonDetailPage({
   params,
 }: {
-  params: Promise<{ season: string }>;
+  params: { season: Season};
 }) {
   const { season } = await params;
-  const seasonKey = season as SeasonKey;
+  const seasonKey = season as Season;
   const config = SEASONS[seasonKey];
 
   if (!config) {
@@ -22,7 +22,7 @@ export default async function SeasonDetailPage({
     where: {
       isActive: true,
       occasions: {
-        hasSome: config.match,
+        hasSome: [...config.match],
       },
     },
     orderBy: { createdAt: "desc" },
@@ -47,12 +47,12 @@ export default async function SeasonDetailPage({
               product={{
                 id: product.slug,
                 name: product.name,
-                fabric: product.fabric,
-                weight: product.weight,
-                style: product.style,
-                tier: product.tier,
+                fabric: product.fabric as "Tussar" | "Ghicha" | "Mulberry",
+                weight: product.weight as "Light" | "Medium" | "Heavy",
+                style: product.style as "Traditional" | "Contemporary" | "Elegant",
+                tier: product.tier as "Everyday" | "Occasion" | "Heirloom",
                 tones: product.tones,
-                occasion: product.occasions,
+                occasions: product.occasions,
                 isNew: product.isNew,
               }}
             />

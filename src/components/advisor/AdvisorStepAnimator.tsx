@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, easeInOut } from "framer-motion";
 import React from "react";
 
 const variants = {
@@ -11,12 +11,12 @@ const variants = {
   animate: {
     opacity: 1,
     x: 0,
-    transition: { duration: 0.35, ease: "easeOut" },
+    transition: { duration: 0.35, ease: easeInOut },
   },
   exit: (direction: number) => ({
     opacity: 0,
     x: direction > 0 ? -40 : 40,
-    transition: { duration: 0.25, ease: "easeIn" },
+    transition: { duration: 0.25, ease: easeInOut },
   }),
 };
 
