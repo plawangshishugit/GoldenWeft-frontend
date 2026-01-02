@@ -1,11 +1,11 @@
+datasource db {
+  provider = "mongodb"
+}
+
 generator client {
   provider = "prisma-client-js"
 }
 
-datasource db {
-  provider = "mongodb"
-  url      = env("DATABASE_URL")
-}
 enum OrderStatus {
   PENDING
   CONFIRMED
@@ -13,6 +13,7 @@ enum OrderStatus {
   SHIPPED
   COMPLETED
   CANCELLED
+  REFUNDED
 }
 
 
