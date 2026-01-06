@@ -14,6 +14,7 @@ export const STYLES = {
     dbValue: "Elegant",
     description: "Light, expressive modern silks",
   },
+
 } as const;
 
 export type StyleKey = keyof typeof STYLES;
