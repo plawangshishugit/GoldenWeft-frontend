@@ -1,4 +1,4 @@
-# Live link [https://goldenweft.vercel.app/](https://goldenweft.vercel.app/)
+# Live link [https://golden-weft-frontend.vercel.app/](https://golden-weft-frontend.vercel.app/)
 
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
